@@ -110,14 +110,20 @@
             // Draw squared wave function
             ctx.translate(200, height - 50);
             ctx.lineWidth = 2;
-            ctx.strokeStyle = 'blue';
-            ctx.beginPath();
-            ctx.moveTo(0, 0);
-            for (let x = 0; x < width - 400; x++) {
-                const y = -100 * Math.sin(0.01570796 * x) ** 2;
-                ctx.lineTo(x, y);
+            const pallete = ['blue', 'green', 'red'];
+
+            for (let n = 0; n < 3; n++) {
+                ctx.strokeStyle = pallete[n];
+                ctx.fillStyle = pallete[n];
+                ctx.beginPath();
+                ctx.moveTo(0, 0);
+                for (let x = 0; x < width - 400; x++) {
+                    const y = -150 * Math.sin(0.01570796 * (n + 1) * x) ** 2;
+                    ctx.lineTo(x, y);
+                }
+                ctx.stroke();
+                ctx.fillText('n = ' + (n+1), -50, -100 + n * 20);
             }
-            ctx.stroke();
         }
 
         function checkAnswer(wellWidth) {
@@ -141,9 +147,9 @@
             content.style.display = content.style.display === "none" ? "block" : "none";
             if (content.style.display === "block") {
                 document.getElementById("solutionSection").scrollIntoView({ behavior: "smooth" });
-                document.getElementById("toggle").innerText = "点击隐藏解答"
+                document.getElementById("toggle").innerText = "隐藏解答"
             } else {
-                document.getElementById("toggle").innerText = "点击查看解答"
+                document.getElementById("toggle").innerText = "查看解答"
             }
         }
 
@@ -192,7 +198,7 @@
 
     <div id="solutionSection">
         <h2>分析与解答</h2>
-        <button id="toggle" onclick="toggleContent()">点击查看解答</button>
+        <button id="toggle" onclick="toggleContent()">查看解答</button>
         <div id="hiddenContent" style="display: none;">
             <p>以中心为原点，宽度为\(L\)的一维无限深势阱中</p>
             <p>\[
