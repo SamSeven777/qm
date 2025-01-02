@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quantum 101</title>
+    <style>
+        .canvasContainer {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        canvas {
+            border: 2px solid black;
+        }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.0/es5/tex-mml-chtml.js"></script>
+    <script>
+        function getNumber() {
+            return Math.floor(Math.random() * 10) + 1;
+        }
+
+        const wellWidth = getNumber();
+
+        function drawAxes(ctx, width, height) {
+            ctx.strokeStyle = 'black';
+            ctx.lineWidth = 1;
+
+            // Draw x-axis
+            ctx.beginPath();
+            ctx.moveTo(100, height - 50);
+            ctx.lineTo(width - 100, height - 50);
+            ctx.stroke();
+
+            // Draw U(x)-axis
+            ctx.beginPath();
+            ctx.moveTo(width / 2, height - 50);
+            ctx.lineTo(width / 2, 50);
+            ctx.stroke();
+
+            // Draw x arrow
+            ctx.beginPath();
+            ctx.moveTo(width - 100, height - 55);
+            ctx.lineTo(width - 100, height - 45);
+            ctx.lineTo(width - 90, height - 50);
+            ctx.closePath();
+            ctx.fill();
+
+            // Draw U arrow
+            ctx.beginPath();
+            ctx.moveTo(width / 2 - 5, 50);
+            ctx.lineTo(width / 2 + 5, 50);
+            ctx.lineTo(width / 2, 40);
+            ctx.closePath();
+            ctx.fill();
+        }
+
+        function drawLabels(ctx, width, height, y_label) {
+            ctx.font = '16px Arial';
+            ctx.fillText(y_label, width / 2 + 5, 38);
+            ctx.fillText('x', width - 88, height - 45);
+            ctx.fillText('O', width / 2 + 5, height - 55);
+            ctx.fillText('L/2', width - 210, height - 30);
+            ctx.fillText('∞', width - 205, 45);
+            ctx.fillText('-L/2', 190, height - 30);
+            ctx.fillText('∞', 195, 45);
+        }
+
+        function drawPotentialWell() {
+            const canvas = document.getElementById("potentialWell");
+            const ctx = canvas.getContext('2d');
+            const width = canvas.width;
+            const height = canvas.height;
+
+            drawAxes(ctx, width, height);
+            drawLabels(ctx, width, height, 'U(x)');
+
+            // Draw walls
+            ctx.lineWidth = 4;
+            ctx.beginPath();
+            ctx.moveTo(0, 50);
+            ctx.lineTo(200, 50);
+            ctx.lineTo(200, height - 50);
+            ctx.lineTo(width - 200, height - 50);
+            ctx.lineTo(width - 200, 50);
+            ctx.lineTo(width, 50);
+            ctx.stroke();
+        }
+
+        function drawWave() {
+            const canvas = document.getElementById('sineCanvas');
+            const ctx = canvas.getContext('2d');
+            const width = canvas.width;
+            const height = canvas.height;
+
+            drawAxes(ctx, width, height);
+            drawLabels(ctx, width, height, '|ψ(x)|²');
+
+            // Draw walls
+            ctx.lineWidth = 4;
+            ctx.beginPath();
+            ctx.moveTo(0, 50);
+            ctx.lineTo(200, 50);
+            ctx.lineTo(200, height - 50);
+            ctx.lineTo(width - 200, height - 50);
+            ctx.lineTo(width - 200, 50);
+            ctx.lineTo(width, 50);
+            ctx.stroke();
+
+            // Draw squared wave function
+            ctx.translate(200, height - 50);
+            ctx.lineWidth = 2;
+            ctx.strokeStyle = 'blue';
+            ctx.beginPath();
+            ctx.moveTo(0, 0);
+            for (let x = 0; x < width - 400; x++) {
+                const y = -100 * Math.sin(0.01570796 * x) ** 2;
+                ctx.lineTo(x, y);
+            }
+            ctx.stroke();
+        }
+
+        function checkAnswer(wellWidth) {
+            const answer1 = parseFloat(document.getElementById('answerInput1').value);
+            const answer2 = parseFloat(document.getElementById('answerInput2').value);
+            const result = document.getElementById("result");
+
+            const correctAnswer = 0.3760301461 / wellWidth ** 2;
+
+            if (Math.abs((answer1 - correctAnswer) / correctAnswer) < 1e-3 && answer2 === 0) {
+                result.innerHTML = "回答正确 :-)";
+            } else {
+                result.innerHTML = "回答错误 :-(";
+            }
+
+            document.getElementById("answerSection").scrollIntoView();
+        }
+
+        function toggleContent() {
+            const content = document.getElementById("hiddenContent");
+            content.style.display = content.style.display === "none" ? "block" : "none";
+            if (content.style.display === "block") {
+                document.getElementById("solutionSection").scrollIntoView({ behavior: "smooth" });
+                document.getElementById("toggle").innerText = "点击隐藏解答"
+            } else {
+                document.getElementById("toggle").innerText = "点击查看解答"
+            }
+        }
+
+        window.onload = () => {    
+            const questionElement = document.getElementById('question');
+            questionElement.innerHTML = `电子被限制在一个宽度为${wellWidth}nm的无限深势能阱中，如下图所示。求粒子的基态能量和粒子处于基态时出现概率最大的位置。`;
+
+            drawPotentialWell();
+            drawWave();
+        };
+    </script>
+</head>
+<body>
+    <h1>求解一维无限深方势阱问题</h1>
+    <div id="questionSection">
+        <h2>问题</h2>
+        <p>粒子具有波粒二相性，因此用波函数来描述其状态，记作 \(\Psi (x, t)\)，粒子出现的几率密度</p>
+        <p>\[\frac{\text{d} \Pr}{\text{d} V} = |\Psi(x, t)|^2\]</p>
+        <p>当势能不随时间变化时，用分离变量法，设\(\Psi(x,t) = \psi(x) f(t)\)，其中\(f(t) = ce^{-iEt/\hbar}\)</p>
+        <p>对于\(\psi(x)\)，可通过定态Schrödinger方程求解</p>
+        <p>\[-\frac{\hbar^2}{2m} \frac{\text{d}^2 \psi(x)}{\text{d} x^2} + U(x) \psi = E \psi\]
+        </p>
+        <p>其中，\(m\)是粒子的质量，\(\hbar\) 是约化Planck常数，\(U\)是势能，\(E\)是粒子的能量。</p>
+        <p id="question"></p>
+        <div class="canvasContainer">
+            <canvas id="potentialWell" width="600" height="400"></canvas>
+        </div>
+        </div id="hint">
+        <h3>提示：</h3>
+            <p>方程</p>
+            <p>\[\frac{\text{d}^2 y(x)}{\text{d} x^2} + k^2 y(x) = 0\]</p>
+            <p>的解是</p>
+            <p>\[y(x) = A\cos k x + B\sin k x \quad (k,A,B为常数)\]</p>
+            <p>积分</p>
+            <p>\[\int_0^a \left| \sin kx \right|^2 = \frac{a}{2}\]</p>
+        </div>
+    </div>
+    <div id="answerSection">
+        <h2>作答</h2>
+        <p>请提交你的答案：</p>
+        <p>基态能量：<input type="text" id="answerInput1" placeholder="输入你的答案">eV</p>
+        <p>最大概率位置坐标：<input type="text" id="answerInput2" placeholder="输入你的答案"></p>
+        <button onclick="checkAnswer(wellWidth)">提交</button>
+        <p id="result"></p>
+    </div>
+
+    <div id="solutionSection">
+        <h2>分析与解答</h2>
+        <button id="toggle" onclick="toggleContent()">点击查看解答</button>
+        <div id="hiddenContent" style="display: none;">
+            <p>以中心为原点，宽度为\(L\)的一维无限深势阱中</p>
+            <p>\[
+                U(x) = \begin{cases}
+                    0 & -L/2 < x < L/2 \\
+                    \infty & x > L/2, x < -L/2 
+                \end{cases}
+            \]</p>
+            <p>波函数连续, 且满足\( \int_{-\infty}^\infty |\psi(x)|^2 \text{d}x = 1 \)。</p>
+
+            <h4>1. 在阱外（\(x > L/2, x < -L/2\)）：</h4>
+            <p>势能无限大，粒子不能出现在阱外的部分。\(|\psi(x)^2| = 0\)恒成立，所以\(\psi(x) = 0\)</p>
+
+            <h4>2. 在阱内（\(- L/2 < x < -L/2\)）：</h4>
+            <p>势能\(U(x) = 0\)，带入定态Schrödinger方程，得</p>
+            <p>\[\frac{\text{d}^2 \psi(x)}{\text{d} x^2} + \frac{2mE}{\hbar^2} \psi = 0\]</p>
+            <p>令\(k = \sqrt{2mE}/\hbar\)，解得</p>
+            <p>\[\psi(x) = A \cos k x + B \sin k x\]</p>
+
+            <p>由连续性条件，\(x=\pm L/2\)时，\(\psi(L/2) = \psi(-L/2) = 0\)，得到</p>
+            <p>\[A \cos (kL/2) + B\sin (kL/2) = 0\]</p>
+            <p>\[A \cos (kL/2) - B\sin (kL/2) = 0\]</p>
+
+            <p>解得</p>
+            <p>\[B = 0, k = \frac{n\pi}{L}, n = 1,3,5,\dots\]</p>
+            <p>或</p>
+            <p>\[A = 0, k = \frac{n\pi}{L}, n = 2,4,6,\dots\]</p>
+            
+            <p>粒子能量</p>
+            <p>\[E_n = \frac{\hbar^2 \pi^2 n^2}{2 m L^2}, n = 1,2,3,\dots\]</p>
+            <p>波函数</p>
+            <p>\[\psi_n(x) = C \sin \frac{n\pi}{L} (x + \frac{L}{2}) , n = 1,2,3,\dots\]</p>
+            
+            <p>根据归一化条件</p>
+            <p>\[\int_{-\infty}^\infty |\psi(x)|^2 \text{d}x = C^2 \int_{-L/2}^{L/2} \left| \sin \frac{n\pi}{L}(x + \frac{L}{2}) \right|^2 \text{d}x = 1\]</p>
+            <p>解得</p>
+            <p>\[C = \sqrt{\frac{2}{L}}\]</p>
+            
+            <p>所以，波函数为</p>
+            <p>\[\psi_n(x) = \sqrt{\frac{2}{L}} \sin \frac{n\pi}{L}(x + \frac{L}{2}), n = 1,2,3,\dots \]</p>
+            <div class="canvasContainer">
+                <canvas id="sineCanvas" width="600" height="400"></canvas>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
