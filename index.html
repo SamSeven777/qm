@@ -365,6 +365,14 @@
             if (window.MathJax && MathJax.typesetPromise) {
                 MathJax.typesetPromise();
             }
+
+            const handleEnter = (e) => {
+                if (e.key === 'Enter') {
+                    checkAnswer(wellWidth);
+                }
+            };
+            document.getElementById('answerInput1').addEventListener('keydown', handleEnter);
+            document.getElementById('answerInput2').addEventListener('keydown', handleEnter);
         });
     </script>
 </head>
