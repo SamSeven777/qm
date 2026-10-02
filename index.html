@@ -64,6 +64,19 @@
             margin-top: 10px;
         }
     </style>
+    <script>
+        window.MathJax = {
+            tex: {
+                inlineMath: [['\\(', '\\)']],
+                displayMath: [['\\[', '\\]']]
+            },
+            startup: {
+                pageReady: () => {
+                    return MathJax.startup.defaultPageReady();
+                }
+            }
+        };
+    </script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.0/es5/tex-mml-chtml.js"></script>
     <script>
         let currentLang = 'zh';
@@ -82,7 +95,7 @@
                 secHint: "提示：",
                 hintEq: "方程",
                 hintSol: "的解是",
-                hintConst: "\\( (k,A,B \\text{ 为常数}) \\)",
+                hintSolFormula: "\\[y(x) = A\\cos kx + B\\sin kx \\quad (k, A, B \\text{ 为常数})\\]",
                 hintInt: "积分",
                 secAnswer: "作答",
                 answerPrompt: "请提交你的答案：",
@@ -123,7 +136,7 @@
                 secHint: "Hint:",
                 hintEq: "The equation",
                 hintSol: "has the general solution",
-                hintConst: "\\( (k, A, B \\text{ are constants}) \\)",
+                hintSolFormula: "\\[y(x) = A\\cos kx + B\\sin kx \\quad (k, A, B \\text{ are constants})\\]",
                 hintInt: "Definite integral:",
                 secAnswer: "Answer",
                 answerPrompt: "Submit your solution:",
@@ -315,7 +328,7 @@
             document.getElementById('secHint').innerText = t.secHint;
             document.getElementById('hintEq').innerText = t.hintEq;
             document.getElementById('hintSol').innerText = t.hintSol;
-            document.getElementById('hintConst').innerHTML = t.hintConst;
+            document.getElementById('hintSolFormula').innerHTML = t.hintSolFormula;
             document.getElementById('hintInt').innerText = t.hintInt;
 
             document.getElementById('secAnswer').innerText = t.secAnswer;
@@ -345,11 +358,14 @@
             document.getElementById('solNormResult').innerHTML = t.solNormResult;
         }
 
-        window.onload = () => {
+        window.addEventListener('DOMContentLoaded', () => {
             updateTexts();
             drawPotentialWell();
             drawWave();
-        };
+            if (window.MathJax && MathJax.typesetPromise) {
+                MathJax.typesetPromise();
+            }
+        });
     </script>
 </head>
 <body>
@@ -375,7 +391,7 @@
             <p id="hintEq"></p>
             <p>\[\frac{\text{d}^2 y(x)}{\text{d} x^2} + k^2 y(x) = 0\]</p>
             <p id="hintSol"></p>
-            <p>\[y(x) = A\cos k x + B\sin k x \quad <span id="hintConst"></span>\]</p>
+            <div id="hintSolFormula"></div>
             <p id="hintInt"></p>
             <p>\[\int_0^a \left| \sin kx \right|^2 \text{d}x = \frac{a}{2}\]</p>
         </div>
