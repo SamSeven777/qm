@@ -5,17 +5,154 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Quantum 101</title>
     <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            max-width: 860px;
+            margin: 20px auto;
+            padding: 0 20px;
+            line-height: 1.6;
+            color: #222;
+        }
+        .header-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+        }
+        .lang-btn {
+            padding: 4px 12px;
+            font-size: 14px;
+            cursor: pointer;
+            border: 1px solid #999;
+            background: #fff;
+            border-radius: 4px;
+        }
+        .lang-btn:hover {
+            background: #f0f0f0;
+        }
         .canvasContainer {
             display: flex;
             justify-content: center;
             align-items: center;
+            margin: 15px 0;
         }
         canvas {
             border: 2px solid black;
+            max-width: 100%;
+            height: auto;
+        }
+        input[type="text"] {
+            padding: 4px 8px;
+            font-size: 15px;
+            margin: 0 4px;
+            width: 140px;
+        }
+        button.action-btn {
+            padding: 5px 15px;
+            font-size: 14px;
+            cursor: pointer;
+            border: 1px solid #333;
+            background: #fafafa;
+            border-radius: 4px;
+        }
+        button.action-btn:hover {
+            background: #eaeaea;
+        }
+        #result {
+            font-weight: bold;
+            margin-top: 10px;
         }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.0/es5/tex-mml-chtml.js"></script>
     <script>
+        let currentLang = 'zh';
+
+        const i18n = {
+            zh: {
+                title: "求解一维无限深方势阱问题",
+                btnLang: "English",
+                secQuestion: "问题",
+                p1: "粒子具有波粒二象性，因此用波函数来描述其状态，记作 \\(\\Psi (x, t)\\)，粒子出现的几率密度：",
+                p2: "当势能不随时间变化时，用分离变量法，设 \\(\\Psi(x,t) = \\psi(x) f(t)\\)，其中 \\(f(t) = ce^{-iEt/\\hbar}\\)。",
+                p3: "对于 \\(\\psi(x)\\)，可通过定态 Schrödinger 方程求解：",
+                p4: "其中，\\(m\\) 是粒子的质量（电子质量 \\(m_e \\approx 9.109 \\times 10^{-31} \\text{ kg}\\)），\\(\\hbar\\) 是约化 Planck 常数，\\(U\\) 是势能，\\(E\\) 是粒子的能量。",
+                questionPrefix: "电子被限制在一个宽度为 ",
+                questionSuffix: " nm 的无限深势能阱中，如下图所示。求粒子的基态能量和粒子处于基态时出现概率最大的位置。",
+                secHint: "提示：",
+                hintEq: "方程",
+                hintSol: "的解是",
+                hintConst: "\\( (k,A,B \\text{ 为常数}) \\)",
+                hintInt: "积分",
+                secAnswer: "作答",
+                answerPrompt: "请提交你的答案：",
+                labelEnergy: "基态能量：",
+                labelPos: "最大概率位置坐标：",
+                placeholder: "输入数值",
+                btnSubmit: "提交",
+                correctMsg: "回答正确 :-)",
+                wrongMsg: "回答错误 :-(",
+                secSolution: "分析与解答",
+                btnShowSol: "查看解答",
+                btnHideSol: "隐藏解答",
+                solIntro: "以中心为原点，宽度为 \\(L\\) 的一维无限深势阱中：",
+                solCont: "波函数连续，且满足 \\( \\int_{-\\infty}^\\infty |\\psi(x)|^2 \\text{d}x = 1 \\)。",
+                solPart1Title: "1. 在阱外（\\(x > L/2, x < -L/2\\)）：",
+                solPart1Desc: "势能无限大，粒子不能出现在阱外的部分。\\(|\\psi(x)|^2 = 0\\) 恒成立，因此 \\(\\psi(x) = 0\\)。",
+                solPart2Title: "2. 在阱内（\\(-L/2 < x < L/2\\)）：",
+                solPart2Desc: "势能 \\(U(x) = 0\\)，代入定态 Schrödinger 方程，得：",
+                solPart2Sub1: "令 \\(k = \\sqrt{2mE}/\\hbar\\)，解得：",
+                solPart2Sub2: "由连续性边界条件，当 \\(x = \\pm L/2\\) 时，\\(\\psi(L/2) = \\psi(-L/2) = 0\\)，得到：",
+                solPart2Sub3: "解得对称态与反对称态：",
+                solOr: "或",
+                solPart2Sub4: "粒子能量量子化：",
+                solPart2Sub5: "波函数归一化形式：",
+                solNormTitle: "根据归一化条件：",
+                solNormResult: "解得 \\(C = \\sqrt{\\frac{2}{L}}\\)，因此本征波函数为："
+            },
+            en: {
+                title: "1D Infinite Potential Well Problem",
+                btnLang: "中文",
+                secQuestion: "Question",
+                p1: "Due to wave-particle duality, the quantum state of a particle is described by a wave function \\(\\Psi(x, t)\\). The probability density is given by:",
+                p2: "When the potential is time-independent, separation of variables yields \\(\\Psi(x, t) = \\psi(x)f(t)\\), where \\(f(t) = ce^{-iEt/\\hbar}\\).",
+                p3: "The spatial part \\(\\psi(x)\\) satisfies the time-independent Schrödinger equation:",
+                p4: "where \\(m\\) is the particle mass (electron mass \\(m_e \\approx 9.109 \\times 10^{-31} \\text{ kg}\\)), \\(\\hbar\\) is the reduced Planck constant, \\(U(x)\\) is potential energy, and \\(E\\) is total energy.",
+                questionPrefix: "An electron is confined within a 1D infinite square well of width ",
+                questionSuffix: " nm, as illustrated below. Find the ground-state energy (in eV) and the coordinate x where the particle has maximum probability in the ground state.",
+                secHint: "Hint:",
+                hintEq: "The equation",
+                hintSol: "has the general solution",
+                hintConst: "\\( (k, A, B \\text{ are constants}) \\)",
+                hintInt: "Definite integral:",
+                secAnswer: "Answer",
+                answerPrompt: "Submit your solution:",
+                labelEnergy: "Ground-state Energy: ",
+                labelPos: "Coordinate of Maximum Probability: ",
+                placeholder: "Enter value",
+                btnSubmit: "Submit",
+                correctMsg: "Correct answer! :-)",
+                wrongMsg: "Incorrect answer :-(",
+                secSolution: "Analysis & Solution",
+                btnShowSol: "Show Solution",
+                btnHideSol: "Hide Solution",
+                solIntro: "For a 1D infinite square well of width \\(L\\) centered at the origin \\(x = 0\\):",
+                solCont: "The wave function is continuous and satisfies the normalization \\( \\int_{-\\infty}^\\infty |\\psi(x)|^2 \\text{d}x = 1 \\).",
+                solPart1Title: "1. Outside the well (\\(x > L/2, x < -L/2\\)):",
+                solPart1Desc: "Potential is infinite, so the particle cannot exist outside: \\(|\\psi(x)|^2 = 0\\), thus \\(\\psi(x) = 0\\).",
+                solPart2Title: "2. Inside the well (\\(-L/2 < x < L/2\\)):",
+                solPart2Desc: "Potential \\(U(x) = 0\\). Substituting into the Schrödinger equation yields:",
+                solPart2Sub1: "Let \\(k = \\sqrt{2mE}/\\hbar\\), the solution is:",
+                solPart2Sub2: "Boundary conditions at \\(x = \\pm L/2\\) require \\(\\psi(L/2) = \\psi(-L/2) = 0\\):",
+                solPart2Sub3: "Yielding symmetric and antisymmetric modes:",
+                solOr: "or",
+                solPart2Sub4: "Quantized energy levels:",
+                solPart2Sub5: "Normalized wave functions:",
+                solNormTitle: "Applying normalization:",
+                solNormResult: "Solving for \\(C = \\sqrt{\\frac{2}{L}}\\), the stationary wave functions are:"
+            }
+        };
+
         function getNumber() {
             return Math.floor(Math.random() * 10) + 1;
         }
@@ -134,9 +271,11 @@
             const correctAnswer = 0.3760301461 / wellWidth ** 2;
 
             if (Math.abs((answer1 - correctAnswer) / correctAnswer) < 1e-3 && answer2 === 0) {
-                result.innerHTML = "回答正确 :-)";
+                result.innerText = i18n[currentLang].correctMsg;
+                result.style.color = "green";
             } else {
-                result.innerHTML = "回答错误 :-(";
+                result.innerText = i18n[currentLang].wrongMsg;
+                result.style.color = "red";
             }
 
             document.getElementById("answerSection").scrollIntoView();
@@ -144,101 +283,153 @@
 
         function toggleContent() {
             const content = document.getElementById("hiddenContent");
-            content.style.display = content.style.display === "none" ? "block" : "none";
-            if (content.style.display === "block") {
+            const btn = document.getElementById("toggle");
+            const isOpen = content.style.display === "block";
+            content.style.display = isOpen ? "none" : "block";
+            btn.innerText = isOpen ? i18n[currentLang].btnShowSol : i18n[currentLang].btnHideSol;
+            if (!isOpen) {
                 document.getElementById("solutionSection").scrollIntoView({ behavior: "smooth" });
-                document.getElementById("toggle").innerText = "隐藏解答"
-            } else {
-                document.getElementById("toggle").innerText = "查看解答"
             }
         }
 
-        window.onload = () => {    
-            const questionElement = document.getElementById('question');
-            questionElement.innerHTML = `电子被限制在一个宽度为${wellWidth}nm的无限深势能阱中，如下图所示。求粒子的基态能量和粒子处于基态时出现概率最大的位置。`;
+        function switchLanguage() {
+            currentLang = currentLang === 'zh' ? 'en' : 'zh';
+            updateTexts();
+            if (window.MathJax && MathJax.typesetPromise) {
+                MathJax.typesetPromise();
+            }
+        }
 
+        function updateTexts() {
+            const t = i18n[currentLang];
+            document.title = currentLang === 'zh' ? "Quantum 101 - 求解一维无限深方势阱" : "Quantum 101 - 1D Infinite Potential Well";
+            document.getElementById('langToggleBtn').innerText = t.btnLang;
+            document.getElementById('mainTitle').innerText = t.title;
+            document.getElementById('secQuestion').innerText = t.secQuestion;
+            document.getElementById('p1').innerHTML = t.p1;
+            document.getElementById('p2').innerHTML = t.p2;
+            document.getElementById('p3').innerHTML = t.p3;
+            document.getElementById('p4').innerHTML = t.p4;
+            document.getElementById('question').innerHTML = `<strong>${t.questionPrefix}${wellWidth}${t.questionSuffix}</strong>`;
+            
+            document.getElementById('secHint').innerText = t.secHint;
+            document.getElementById('hintEq').innerText = t.hintEq;
+            document.getElementById('hintSol').innerText = t.hintSol;
+            document.getElementById('hintConst').innerHTML = t.hintConst;
+            document.getElementById('hintInt').innerText = t.hintInt;
+
+            document.getElementById('secAnswer').innerText = t.secAnswer;
+            document.getElementById('answerPrompt').innerText = t.answerPrompt;
+            document.getElementById('labelEnergy').innerText = t.labelEnergy;
+            document.getElementById('labelPos').innerText = t.labelPos;
+            document.getElementById('answerInput1').placeholder = t.placeholder;
+            document.getElementById('answerInput2').placeholder = t.placeholder;
+            document.getElementById('submitBtn').innerText = t.btnSubmit;
+
+            document.getElementById('secSolution').innerText = t.secSolution;
+            const content = document.getElementById("hiddenContent");
+            document.getElementById('toggle').innerText = content.style.display === "block" ? t.btnHideSol : t.btnShowSol;
+            document.getElementById('solIntro').innerHTML = t.solIntro;
+            document.getElementById('solCont').innerHTML = t.solCont;
+            document.getElementById('solPart1Title').innerHTML = t.solPart1Title;
+            document.getElementById('solPart1Desc').innerHTML = t.solPart1Desc;
+            document.getElementById('solPart2Title').innerHTML = t.solPart2Title;
+            document.getElementById('solPart2Desc').innerHTML = t.solPart2Desc;
+            document.getElementById('solPart2Sub1').innerHTML = t.solPart2Sub1;
+            document.getElementById('solPart2Sub2').innerHTML = t.solPart2Sub2;
+            document.getElementById('solPart2Sub3').innerHTML = t.solPart2Sub3;
+            document.getElementById('solOr').innerText = t.solOr;
+            document.getElementById('solPart2Sub4').innerHTML = t.solPart2Sub4;
+            document.getElementById('solPart2Sub5').innerHTML = t.solPart2Sub5;
+            document.getElementById('solNormTitle').innerHTML = t.solNormTitle;
+            document.getElementById('solNormResult').innerHTML = t.solNormResult;
+        }
+
+        window.onload = () => {
+            updateTexts();
             drawPotentialWell();
             drawWave();
         };
     </script>
 </head>
 <body>
-    <h1>求解一维无限深方势阱问题</h1>
+    <div class="header-bar">
+        <h1 id="mainTitle" style="margin: 0;">求解一维无限深方势阱问题</h1>
+        <button id="langToggleBtn" class="lang-btn" onclick="switchLanguage()">English</button>
+    </div>
+
     <div id="questionSection">
-        <h2>问题</h2>
-        <p>粒子具有波粒二相性，因此用波函数来描述其状态，记作 \(\Psi (x, t)\)，粒子出现的几率密度</p>
+        <h2 id="secQuestion">问题</h2>
+        <p id="p1"></p>
         <p>\[\frac{\text{d} \Pr}{\text{d} V} = |\Psi(x, t)|^2\]</p>
-        <p>当势能不随时间变化时，用分离变量法，设\(\Psi(x,t) = \psi(x) f(t)\)，其中\(f(t) = ce^{-iEt/\hbar}\)</p>
-        <p>对于\(\psi(x)\)，可通过定态Schrödinger方程求解</p>
-        <p>\[-\frac{\hbar^2}{2m} \frac{\text{d}^2 \psi(x)}{\text{d} x^2} + U(x) \psi = E \psi\]
-        </p>
-        <p>其中，\(m\)是粒子的质量，\(\hbar\) 是约化Planck常数，\(U\)是势能，\(E\)是粒子的能量。</p>
-        <p id="question"></p>
+        <p id="p2"></p>
+        <p id="p3"></p>
+        <p>\[-\frac{\hbar^2}{2m} \frac{\text{d}^2 \psi(x)}{\text{d} x^2} + U(x) \psi = E \psi\]</p>
+        <p id="p4"></p>
+        <p id="question" style="background: #f8f9fa; padding: 12px; border-left: 4px solid #0366d6;"></p>
         <div class="canvasContainer">
             <canvas id="potentialWell" width="600" height="400"></canvas>
         </div>
-        </div id="hint">
-        <h3>提示：</h3>
-            <p>方程</p>
+        <div id="hint">
+            <h3 id="secHint">提示：</h3>
+            <p id="hintEq"></p>
             <p>\[\frac{\text{d}^2 y(x)}{\text{d} x^2} + k^2 y(x) = 0\]</p>
-            <p>的解是</p>
-            <p>\[y(x) = A\cos k x + B\sin k x \quad (k,A,B为常数)\]</p>
-            <p>积分</p>
-            <p>\[\int_0^a \left| \sin kx \right|^2 = \frac{a}{2}\]</p>
+            <p id="hintSol"></p>
+            <p>\[y(x) = A\cos k x + B\sin k x \quad <span id="hintConst"></span>\]</p>
+            <p id="hintInt"></p>
+            <p>\[\int_0^a \left| \sin kx \right|^2 \text{d}x = \frac{a}{2}\]</p>
         </div>
     </div>
+
     <div id="answerSection">
-        <h2>作答</h2>
-        <p>请提交你的答案：</p>
-        <p>基态能量：<input type="text" id="answerInput1" placeholder="输入你的答案">eV</p>
-        <p>最大概率位置坐标：<input type="text" id="answerInput2" placeholder="输入你的答案"></p>
-        <button onclick="checkAnswer(wellWidth)">提交</button>
+        <h2 id="secAnswer">作答</h2>
+        <p id="answerPrompt"></p>
+        <p><span id="labelEnergy">基态能量：</span><input type="text" id="answerInput1"> eV</p>
+        <p><span id="labelPos">最大概率位置坐标：</span><input type="text" id="answerInput2"></p>
+        <button id="submitBtn" class="action-btn" onclick="checkAnswer(wellWidth)">提交</button>
         <p id="result"></p>
     </div>
 
     <div id="solutionSection">
-        <h2>分析与解答</h2>
-        <button id="toggle" onclick="toggleContent()">查看解答</button>
-        <div id="hiddenContent" style="display: none;">
-            <p>以中心为原点，宽度为\(L\)的一维无限深势阱中</p>
+        <h2 id="secSolution">分析与解答</h2>
+        <button id="toggle" class="action-btn" onclick="toggleContent()">查看解答</button>
+        <div id="hiddenContent" style="display: none; margin-top: 15px;">
+            <p id="solIntro"></p>
             <p>\[
                 U(x) = \begin{cases}
                     0 & -L/2 < x < L/2 \\
                     \infty & x > L/2, x < -L/2 
                 \end{cases}
             \]</p>
-            <p>波函数连续, 且满足\( \int_{-\infty}^\infty |\psi(x)|^2 \text{d}x = 1 \)。</p>
+            <p id="solCont"></p>
 
-            <h4>1. 在阱外（\(x > L/2, x < -L/2\)）：</h4>
-            <p>势能无限大，粒子不能出现在阱外的部分。\(|\psi(x)^2| = 0\)恒成立，所以\(\psi(x) = 0\)</p>
+            <h4 id="solPart1Title"></h4>
+            <p id="solPart1Desc"></p>
 
-            <h4>2. 在阱内（\(- L/2 < x < -L/2\)）：</h4>
-            <p>势能\(U(x) = 0\)，带入定态Schrödinger方程，得</p>
+            <h4 id="solPart2Title"></h4>
+            <p id="solPart2Desc"></p>
             <p>\[\frac{\text{d}^2 \psi(x)}{\text{d} x^2} + \frac{2mE}{\hbar^2} \psi = 0\]</p>
-            <p>令\(k = \sqrt{2mE}/\hbar\)，解得</p>
+            <p id="solPart2Sub1"></p>
             <p>\[\psi(x) = A \cos k x + B \sin k x\]</p>
 
-            <p>由连续性条件，\(x=\pm L/2\)时，\(\psi(L/2) = \psi(-L/2) = 0\)，得到</p>
+            <p id="solPart2Sub2"></p>
             <p>\[A \cos (kL/2) + B\sin (kL/2) = 0\]</p>
             <p>\[A \cos (kL/2) - B\sin (kL/2) = 0\]</p>
 
-            <p>解得</p>
+            <p id="solPart2Sub3"></p>
             <p>\[B = 0, k = \frac{n\pi}{L}, n = 1,3,5,\dots\]</p>
-            <p>或</p>
+            <p id="solOr"></p>
             <p>\[A = 0, k = \frac{n\pi}{L}, n = 2,4,6,\dots\]</p>
             
-            <p>粒子能量</p>
+            <p id="solPart2Sub4"></p>
             <p>\[E_n = \frac{\hbar^2 \pi^2 n^2}{2 m L^2}, n = 1,2,3,\dots\]</p>
-            <p>波函数</p>
-            <p>\[\psi_n(x) = C \sin \frac{n\pi}{L} (x + \frac{L}{2}) , n = 1,2,3,\dots\]</p>
+            <p id="solPart2Sub5"></p>
+            <p>\[\psi_n(x) = C \sin \frac{n\pi}{L} \left(x + \frac{L}{2}\right) , n = 1,2,3,\dots\]</p>
             
-            <p>根据归一化条件</p>
-            <p>\[\int_{-\infty}^\infty |\psi(x)|^2 \text{d}x = C^2 \int_{-L/2}^{L/2} \left| \sin \frac{n\pi}{L}(x + \frac{L}{2}) \right|^2 \text{d}x = 1\]</p>
-            <p>解得</p>
-            <p>\[C = \sqrt{\frac{2}{L}}\]</p>
-            
-            <p>所以，波函数为</p>
-            <p>\[\psi_n(x) = \sqrt{\frac{2}{L}} \sin \frac{n\pi}{L}(x + \frac{L}{2}), n = 1,2,3,\dots \]</p>
+            <p id="solNormTitle"></p>
+            <p>\[\int_{-\infty}^\infty |\psi(x)|^2 \text{d}x = C^2 \int_{-L/2}^{L/2} \left| \sin \frac{n\pi}{L}\left(x + \frac{L}{2}\right) \right|^2 \text{d}x = 1\]</p>
+            <p id="solNormResult"></p>
+            <p>\[\psi_n(x) = \sqrt{\frac{2}{L}} \sin \frac{n\pi}{L}\left(x + \frac{L}{2}\right), n = 1,2,3,\dots \]</p>
             <div class="canvasContainer">
                 <canvas id="sineCanvas" width="600" height="400"></canvas>
             </div>
